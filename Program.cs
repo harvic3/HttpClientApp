@@ -48,3 +48,4 @@ HttpResult<string> secondHttpResult = JsonSerializer.Deserialize<HttpResult<stri
 ConsoleTools.WriteWarning( $"Second response: {secondResponse.StatusCode} and Result message was '{secondHttpResult.Message}'" );
 
 ConsoleTools.WriteLine( "That's all folks!" );
+httpTools.Dispose();
