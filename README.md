@@ -20,7 +20,7 @@ If you want to run it from the command line, follow the instructions below.
 1. The `System.Text.Json.Serialization` namespace is used to serialize and deserialize JSON.
 1. Use the `JsonSerializer` class to serialize and deserialize JSON.
 1. Is importan to use the `JsonPropertyName` attribute to map the properties of the DTO to the properties of the domain object. 
-1. Even it's a good practice use DTO pattern to map the domain object to the response object. 
+1. Even it's a good practice use DTO pattern to map the domain object to the response object and viceversa. 
 
 ```csharp
   internal class AnimalDto
