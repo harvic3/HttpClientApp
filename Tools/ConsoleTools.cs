@@ -30,6 +30,11 @@
       Console.ResetColor();
     }
 
+    public static void LineBreak()
+    {
+      Console.WriteLine();
+    }
+
     public static string PromptForString( string prompt )
     {
       WriteLine( prompt );
@@ -62,7 +67,7 @@
         }
         else
         {
-          WriteError( "Invalid option" );
+          WriteError( $"{input} is an invalid option" );
           WriteLine( prompt );
         }
       }

@@ -4,7 +4,6 @@ namespace HttpClientApp.Factories
 {
   internal class AnimalFactory
   {
-    // How can I ensure that Type animalType can only be a type of Animal?
     public static Animal GetAnimal( Type animalType, string name, string color, Uri image )
     {
       // Normal way to create an object
