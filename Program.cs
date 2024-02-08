@@ -2,9 +2,11 @@
 using HttpClientApp.Dtos;
 using HttpClientApp.Factories;
 using HttpClientApp.Tools;
-using System.Net.Http.Formatting;
+using Microsoft.Extensions.DependencyInjection;
 
-HttpTools httpTools = new HttpTools();
+var httpClientFactory = new ServiceCollection().AddHttpClient().BuildServiceProvider().GetRequiredService<IHttpClientFactory>();
+
+HttpTools httpTools = new( httpClientFactory );
 string animalImagesUrl = "https://run.mocky.io/v3/4eab833d-005c-4e14-bc31-dec65ecf58f2";
 string postAnimalsUrl = "https://run.mocky.io/v3/0f4294eb-23fe-4e97-946c-d2ae401b4a1c";
 
@@ -18,18 +20,17 @@ string animalType = ConsoleTools.PromptForStringOption(
 );
 string name = ConsoleTools.PromptForString( $"What's the name of your {animalType}?" );
 string color = ConsoleTools.PromptForString( $"What's the color of your {animalType}?" );
-var imagesResponse = httpTools.GetAsync( animalImagesUrl ).Result;
+// Create a dictionary with the headers like following
+var headers = new Dictionary<string, string> { { "Accept", "application/json" } };
+var imagesResponse = httpTools.SendRetryAsync<HttpResult<AnimalImagesDto>, HttpResult<string>>( animalImagesUrl, HttpMethod.Get, headers ).Result;
 
-HttpResult<AnimalImagesDto> animalImagesResult =
-  HttpTools.Deserialize( imagesResponse, HttpResult<AnimalImagesDto>.Default( AnimalImagesDto.Default() ) );
-if ( !animalImagesResult.Success )
+if ( imagesResponse.Response?.Success == false || imagesResponse.Error is not null )
 {
   ConsoleTools.WriteError( $"Animal images resource {animalImagesUrl} failed" );
   httpTools.Dispose();
-  imagesResponse.EnsureSuccessStatusCode();
 }
 
-Uri image = animalImagesResult.Data?.GetImage( animalType ) ?? AnimalImagesDto.DefaultImage();
+Uri image = imagesResponse.Response?.Data?.GetImage( animalType ) ?? AnimalImagesDto.DefaultImage();
 
 Animal animal = AnimalFactory.GetAnimal( AnimalFactory.GetTypeByName( animalType ), name, color, image );
 ConsoleTools.WriteWarning( $"You have created a {animalType} named {name}. ¡{animal.ToString()}!" );
@@ -37,16 +38,11 @@ ConsoleTools.LineBreak();
 
 ConsoleTools.WriteLine( $"Now we are going to send your {animalType} named {name} to the cloud" );
 
-// First way using HttpContent
 HttpContent content = HttpTools.Serialize( AnimalDto.FromDomain( animal ) );
-var firtsResponse = httpTools.PostAsync( postAnimalsUrl, content ).Result;
-HttpResult<string> firtsHttpResult = HttpTools.Deserialize( firtsResponse, HttpResult<string>.Default( String.Empty ) );
-ConsoleTools.WriteWarning( $"First response: {firtsResponse.StatusCode} and Result message was '{firtsHttpResult.Message}'" );
-
-// Second way using Client directly
-var secondResponse = httpTools.GetClient().PostAsync( postAnimalsUrl, AnimalDto.FromDomain( animal ), new JsonMediaTypeFormatter() ).Result;
-HttpResult<string> secondHttpResult = HttpTools.Deserialize( secondResponse, HttpResult<string>.Default( String.Empty ) );
-ConsoleTools.WriteWarning( $"Second response: {secondResponse.StatusCode} and Result message was '{secondHttpResult.Message}'" );
+// You can add other headers to the HttpContent like following
+// content.Headers.Add( "Authorization", $"Bearer {someJWT}" );
+var firtsResponse = httpTools.SendRetryAsync<HttpResult<string>, string>( postAnimalsUrl, HttpMethod.Post, headers, content ).Result;
+ConsoleTools.WriteWarning( $"Response: {firtsResponse.StatusCode} and Result message was '{firtsResponse.Response?.Message}'" );
 
 ConsoleTools.WriteLine( "That's all folks!" );
 httpTools.Dispose();
